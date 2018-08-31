@@ -1,0 +1,93 @@
+<project name="dev_ops_automation_example" default="dist" basedir="."
+xmlns:if="ant:if" xmlns:unless="ant:unless">
+
+    <!-- set global properties for this build -->
+    <property name="src" location="src"/>
+    <property name="build" location="build"/>
+    <property name="dist" location="dist"/>
+    <property name="cmd" value="?"/>
+
+    <description>
+        Basic Ant script example for: dev_ops_automation_example
+    </description>
+
+    <!-- Just bring up jenkins -->
+    <target name ="jenkins" 
+    depends="jenkins-start" />
+
+    <!-- Just build docker image (without jenkins) -->
+    <target name ="build" 
+    depends="docker-stop,
+             docker-build,
+             docker-compose" />
+
+    <!-- only compose existing docker containers -->
+    <target name ="compose"
+    depends="docker-compose"/>
+
+    <!-- only shutown any running docker containers -->
+    <target name ="stop" 
+    depends="docker-stop"/>
+
+    <!-- Start a jenkins instance -->
+    <target name ="jenkins-start">
+        <echo message="Starting a Jenkins instance"/>
+        <exec executable="bash">
+            <arg value="-c"/>
+            <arg value="sudo java -jar jenkins.war -d"/>
+        </exec>
+        <echo message="Check the address: http://computer-name:8080/ in your browser"/>
+    </target>
+
+    <!-- Stop a jenkins instance -->
+    <target name ="jenkins-stop">
+        <echo message="Stopping Jenkins"/>
+        <exec executable="bash">
+            <arg value="-c"/>
+            <arg value="sudo service jenkins stop"/>
+        </exec>
+    </target>
+
+    <!-- shutdown any existing docker containers -->
+    <target name ="docker-stop">
+        <echo message="stopping any running containers"/>
+        <exec executable="bash">
+            <arg value="-c"/>
+            <arg value="sudo docker stop $(sudo docker ps -q)"/>
+        </exec>
+    </target>
+
+    <!-- removes docker images(if any) & then build new docker images -->
+    <target name ="docker-build">
+        <echo message="Removing existing docker images, if any"/>
+        <exec executable="bash">
+            <arg value="-c"/>
+            <arg value="sudo docker-compose down"/>
+        </exec>
+        <echo message="building docker images"/>
+        <exec executable="bash">
+            <arg value="-c"/>
+            <arg value="sudo docker build . -t example:1"/>
+        </exec>
+    </target>
+
+   <!-- run docker container & print out container id's -->
+    <target name ="docker-compose">
+        <echo message="running docker container"/>
+        <exec executable="bash">
+            <arg value="-c"/>
+            <arg value="sudo docker run -p 8000:8000 example:1"/>
+        </exec>
+        <echo message="list of containers"/>
+        <exec executable="bash">
+            <arg value="-c"/>
+            <arg value="sudo docker ps"/>
+        </exec>
+        <echo message="checking if server responds"/>
+        <exec executable="bash">
+            <arg value="-c"/>
+            <arg value="sudo curl http://127.0.0.1:8000 --max-time 10"/>
+        </exec>
+        <echo message="Please navigate to the url: http://127.0.0.1:8000"/>
+    </target>
+</project>
